@@ -78,3 +78,16 @@ func (m *multiWriter) WriteString(s string) (n int, err error) {
 	}
 	return len(s), nil
 }
+
+func (m *multiWriter) Close() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for name := range m.mw {
+		if w, ok := m.mw[name].(io.Closer); ok {
+			_ = w.Close()
+		}
+		delete(m.mw, name)
+	}
+	return nil
+}
