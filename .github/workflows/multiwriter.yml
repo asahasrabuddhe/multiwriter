@@ -1,0 +1,55 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - master
+
+env:
+  GO111MODULE: on
+  GOPROXY: https://proxy.golang.org
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        go: [1.11, 1.12, 1.13]
+    name: ${{ matrix.os }} @ Go ${{ matrix.go }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Set up Go ${{ matrix.go }}
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Set GOPATH and PATH
+        run: |
+          echo "::set-env name=GOPATH::$(dirname $GITHUB_WORKSPACE)"
+          echo "::add-path::$(dirname $GITHUB_WORKSPACE)"
+        shell: bash
+
+      - name: Checkout Code
+        uses: actions/checkout@v1
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Run Tests
+        run: go test ./...
+
+      - name: Create Release
+        id: create_release
+        if: success() && contains(github.ref, 'v')
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
