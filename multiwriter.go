@@ -32,9 +32,7 @@ func (m *multiWriter) Remove(name string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if _, ok := m.mw[name]; ok {
-		delete(m.mw, name)
-	}
+	delete(m.mw, name)
 }
 
 // Write a slice of byte to each of the attached writers
