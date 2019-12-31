@@ -9,7 +9,7 @@ import (
 )
 
 func TestMultiWriter_Write(t *testing.T) {
-	mw := NewMultiWriter()
+	mw := MultiWriter()
 
 	bufOne := new(bytes.Buffer)
 	bufTwo := new(bytes.Buffer)
@@ -51,7 +51,7 @@ func TestMultiWriter_Write(t *testing.T) {
 }
 
 func TestMultiWriter_WriteString(t *testing.T) {
-	mw := NewMultiWriter()
+	mw := MultiWriter()
 
 	bufOne := new(bytes.Buffer)
 	bufTwo := new(bytes.Buffer)
@@ -122,15 +122,17 @@ func (f *failWriter) WriteString(s string) (n int, err error) {
 }
 
 func TestMultiWriter_WriteError(t *testing.T) {
-	mw := NewMultiWriter()
+	mw := MultiWriter()
 
 	bufOne := new(bytes.Buffer)
 	bufTwo := new(bytes.Buffer)
+	bufThree := new(bytes.Buffer)
 
-	wOne := &failWriter{failAfterBytes: 3, w: bufOne}
+	wTwo := &failWriter{failAfterBytes: 3, w: bufTwo}
 
-	mw.Add("one", wOne)
-	mw.Add("two", bufTwo)
+	mw.Add("one", bufOne)
+	mw.Add("two", wTwo)
+	mw.Add("three", bufThree)
 
 	n, err := mw.Write([]byte("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
 	if n != 3 {
@@ -141,21 +143,31 @@ func TestMultiWriter_WriteError(t *testing.T) {
 		t.Error("fail: expected error")
 	}
 
-	if bufOne.String() != "ABC" && bufOne.String() != bufTwo.String() {
-		t.Errorf("fail: expected %s, got %s", "ABC", bufOne.String())
+	if bufOne.String() != "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
+		t.Errorf("fail: expected %s, got %s", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", bufOne.String())
+	}
+
+	if bufTwo.String() != "ABC" {
+		t.Errorf("fail: expected %s, got %s", "ABC", bufTwo.String())
+	}
+
+	if bufThree.String() != "" {
+		t.Errorf("fail: expected %s, got %s", "", bufThree.String())
 	}
 }
 
 func TestMultiWriter_WriteStringError(t *testing.T) {
-	mw := NewMultiWriter()
+	mw := MultiWriter()
 
 	bufOne := new(bytes.Buffer)
 	bufTwo := new(bytes.Buffer)
+	bufThree := new(bytes.Buffer)
 
-	wOne := &failWriter{failAfterBytes: 6, w: bufOne}
+	wTwo := &failWriter{failAfterBytes: 6, w: bufTwo}
 
-	mw.Add("one", wOne)
-	mw.Add("two", bufTwo)
+	mw.Add("one", bufOne)
+	mw.Add("two", wTwo)
+	mw.Add("three", bufThree)
 
 	n, err := mw.WriteString("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	if n != 6 {
@@ -166,7 +178,15 @@ func TestMultiWriter_WriteStringError(t *testing.T) {
 		t.Error("fail: expected error")
 	}
 
-	if bufOne.String() != "ABCDEF" && bufOne.String() != bufTwo.String() {
-		t.Errorf("fail: expected %s, got %s", "ABCDEF", bufOne.String())
+	if bufOne.String() != "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
+		t.Errorf("fail: expected %s, got %s", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", bufOne.String())
+	}
+
+	if bufTwo.String() != "ABCDEF" {
+		t.Errorf("fail: expected %s, got %s", "ABCDEF", bufTwo.String())
+	}
+
+	if bufThree.String() != "" {
+		t.Errorf("fail: expected %s, got %s", "", bufThree.String())
 	}
 }

@@ -10,10 +10,16 @@ type multiWriter struct {
 	mu sync.Mutex
 }
 
-func NewMultiWriter() *multiWriter {
+// Creates a new writer that duplicates its writes to all the attached writers.
+//
+// Each write is written to each attached writer, one at a time. If any writer
+// returns an error, the entire write operation stops and the error is returned.
+// The write is not written to the writers attached after the failing writer.
+func MultiWriter() *multiWriter {
 	return &multiWriter{mw: make(map[string]io.Writer)}
 }
 
+// Adds a new writer to the list of writers
 func (m *multiWriter) Add(name string, writer io.Writer) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -21,6 +27,7 @@ func (m *multiWriter) Add(name string, writer io.Writer) {
 	m.mw[name] = writer
 }
 
+// Removes a writer from the list of writers
 func (m *multiWriter) Remove(name string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -30,6 +37,7 @@ func (m *multiWriter) Remove(name string) {
 	}
 }
 
+// Write a slice of byte to each of the attached writers
 func (m *multiWriter) Write(p []byte) (n int, err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -49,6 +57,7 @@ func (m *multiWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+// Write a string to each of the attached writers
 func (m *multiWriter) WriteString(s string) (n int, err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
