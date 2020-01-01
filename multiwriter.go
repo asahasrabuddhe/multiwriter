@@ -6,8 +6,9 @@ import (
 )
 
 type multiWriter struct {
-	mw map[string]io.Writer
-	mu sync.Mutex
+	mw   map[string]io.Writer
+	keys []string
+	mu   sync.Mutex
 }
 
 // Creates a new writer that duplicates its writes to all the attached writers.
@@ -25,12 +26,19 @@ func (m *multiWriter) Add(name string, writer io.Writer) {
 	defer m.mu.Unlock()
 
 	m.mw[name] = writer
+	m.keys = append(m.keys, name)
 }
 
 // Removes a writer from the list of writers
 func (m *multiWriter) Remove(name string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	for index, key := range m.keys {
+		if key == name {
+			m.keys = append(m.keys[:index], m.keys[index+1:]...)
+		}
+	}
 
 	delete(m.mw, name)
 }
@@ -40,8 +48,8 @@ func (m *multiWriter) Write(p []byte) (n int, err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	for name := range m.mw {
-		if w, ok := m.mw[name]; ok {
+	for _, key := range m.keys {
+		if w, ok := m.mw[key]; ok {
 			n, err = w.Write(p)
 			if err != nil {
 				return
@@ -60,8 +68,8 @@ func (m *multiWriter) WriteString(s string) (n int, err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	for name := range m.mw {
-		if w, ok := m.mw[name]; ok {
+	for _, key := range m.keys {
+		if w, ok := m.mw[key]; ok {
 			if sw, ok := w.(io.StringWriter); ok {
 				n, err = sw.WriteString(s)
 			} else {
@@ -89,5 +97,8 @@ func (m *multiWriter) Close() error {
 		}
 		delete(m.mw, name)
 	}
+
+	m.keys = nil
+
 	return nil
 }
