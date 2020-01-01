@@ -18,7 +18,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         go: [1.12, 1.13]
     name: ${{ matrix.os }} @ Go ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
@@ -44,7 +44,7 @@ jobs:
 
       - name: Create Release
         id: create_release
-        if: success() && contains(github.ref, 'v')
+        if: success() && contains(github.ref, 'v') && contains(matrix.os, 'ubuntu') && contains(matrix.go, '1.13')
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
