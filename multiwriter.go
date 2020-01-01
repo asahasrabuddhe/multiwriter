@@ -5,6 +5,13 @@ import (
 	"sync"
 )
 
+type Writer interface {
+	io.Writer
+	io.StringWriter
+	Add(string, io.Writer)
+	Remove(string)
+}
+
 type multiWriter struct {
 	mw   map[string]io.Writer
 	keys []string
