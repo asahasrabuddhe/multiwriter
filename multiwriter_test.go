@@ -178,7 +178,9 @@ func TestMultiWriter_WriteStringError(t *testing.T) {
 		t.Error("fail: expected error")
 	}
 
-	if bufOne.String() != "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
+	// we need to do this because maps don't maintain order. We need to ensure that both buffers have the wrong
+	// data to mark the test as failed
+	if bufOne.String() != "ABCDEFGHIJKLMNOPQRSTUVWXYZ" && bufThree.String() != "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
 		t.Errorf("fail: expected %s, got %s", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", bufOne.String())
 	}
 
@@ -186,7 +188,7 @@ func TestMultiWriter_WriteStringError(t *testing.T) {
 		t.Errorf("fail: expected %s, got %s", "ABCDEF", bufTwo.String())
 	}
 
-	if bufThree.String() != "" {
+	if bufOne.String() != "" && bufThree.String() != "" {
 		t.Errorf("fail: expected %s, got %s", "", bufThree.String())
 	}
 }
